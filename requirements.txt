@@ -1,0 +1,4 @@
+tensorflow
+notebook
+awscli
+boto3

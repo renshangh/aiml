@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "sheetId": "your-sheet-id",
+        "range": "Sheet1!A2:A"
+      },
+      "name": "Get Job URLs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [100, 100],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "your-credentials-id",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1
+      },
+      "name": "Split URLs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"URL\"]}}",
+        "responseFormat": "string",
+        "jsonParameters": false
+      },
+      "name": "Fetch Job Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "const cheerio = require('cheerio');\nconst $ = cheerio.load(items[0].json.body);\nconst jobDesc = $('body').text();\nreturn [{ json: { jobDescription: jobDesc } }];"
+      },
+      "name": "Extract Job Description",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Given this job description: {{$json.jobDescription}} and this resume: {{reference to Ren's resume}}, check if they match. If yes, revise the resume to match the job requirements. Respond in JSON format like: { match: true/false, revised_resume: '...'}"
+      },
+      "name": "Analyze & Revise Resume",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [900, 100],
+      "credentials": {
+        "openAIApi": {
+          "id": "your-openai-id",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.match}}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If Match",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "fileName": "=custom-resume-{{$json.jobTitle || 'job'}}.txt",
+        "fileContent": "={{$json.revised_resume}}",
+        "binaryData": false,
+        "parentFolderId": "your-google-drive-folder-id"
+      },
+      "name": "Upload to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [1300, 100],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "your-credentials-id",
+          "name": "Google Drive Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get Job URLs": {
+      "main": [[{"node": "Split URLs", "type": "main", "index": 0}]]
+    },
+    "Split URLs": {
+      "main": [[{"node": "Fetch Job Page", "type": "main", "index": 0}]]
+    },
+    "Fetch Job Page": {
+      "main": [[{"node": "Extract Job Description", "type": "main", "index": 0}]]
+    },
+    "Extract Job Description": {
+      "main": [[{"node": "Analyze & Revise Resume", "type": "main", "index": 0}]]
+    },
+    "Analyze & Revise Resume": {
+      "main": [[{"node": "If Match", "type": "main", "index": 0}]]
+    },
+    "If Match": {
+      "main": [[{"node": "Upload to Drive", "type": "main", "index": 0}]]
+    }
+  }
+}
