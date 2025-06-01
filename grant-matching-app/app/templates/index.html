@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grant Matching App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+        h1 { text-align: center; color: #333; }
+        form { margin-top: 2em; }
+        label { display: block; margin-top: 1em; }
+        input, textarea, select { width: 100%; padding: 0.5em; margin-top: 0.5em; border-radius: 4px; border: 1px solid #ccc; }
+        button { margin-top: 1.5em; padding: 0.7em 2em; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .results { margin-top: 2em; }
+        .grant { background: #e9ecef; padding: 1em; border-radius: 4px; margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grant Matching App</h1>
+        <form method="post" action="/">
+            <label for="project">Project Description:</label>
+            <textarea id="project" name="project" rows="5" required placeholder="Describe your project..."></textarea>
+            <button type="submit">Find Matching Grants</button>
+        </form>
+
+        {% if results %}
+        <div class="results">
+            <h2>Matching Grants</h2>
+            {% for grant in results %}
+                <div class="grant">
+                    <h3>{{ grant.name }}</h3>
+                    <p>{{ grant.description }}</p>
+                    <p><strong>Deadline:</strong> {{ grant.deadline }}</p>
+                    <a href="{{ grant.url }}" target="_blank">More Info</a>
+                </div>
+            {% endfor %}
+        </div>
+        {% elif results is not none %}
+            <div class="results">
+                <p>No matching grants found.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
